@@ -12,21 +12,19 @@ from torchvision.transforms.functional import rotate, crop, resize
 from scipy.ndimage.interpolation import map_coordinates
 from scipy.ndimage.filters import gaussian_filter
 
-#--------------------------------------------------------------------------------
-
-# HEDJitter, AutoRandomRotation, RandomGaussBlur, RandomAffineCV2, RandomElastic
-# from https://github.com/gatsby2016/Augmentation-PyTorch-Transforms
-
-#--------------------------------------------------------------------------------
 
 class HEDJitter(object):
     """
     Randomly perturbe the HED color space value an RGB image.
     """
-    def __init__(self, theta=0.): # HED_light: theta=0.05; HED_strong: theta=0.2
-        assert isinstance(theta, numbers.Number), "theta should be a single number."
+    def __init__(
+        self, theta=0.
+    ):  # HED_light: theta=0.05; HED_strong: theta=0.2
+        assert isinstance(
+            theta, numbers.Number
+        ), "theta should be a single number."
         self.theta = theta
-        self.alpha = np.random.uniform(1-theta, 1+theta, (1, 3))
+        self.alpha = np.random.uniform(1 - theta, 1 + theta, (1, 3))
         self.betti = np.random.uniform(-theta, theta, (1, 3))
 
     @staticmethod
@@ -39,7 +37,9 @@ class HEDJitter(object):
 
         imin = nimg.min()
         imax = nimg.max()
-        rsimg = (255 * (nimg - imin) / (imax - imin)).astype('uint8')  # rescale to [0,255]
+        rsimg = (255 * (nimg - imin) / (imax - imin)).astype(
+            'uint8'
+        )  # rescale to [0,255]
         # transfer to PIL image
         return Image.fromarray(rsimg)
 
@@ -52,20 +52,21 @@ class HEDJitter(object):
         format_string += ',alpha={0}'.format(self.alpha)
         format_string += ',betti={0}'.format(self.betti)
         return format_string
-    
 
-#--------------------------------------------------------------------------------
 
 class AutoRandomRotation(object):
     """
     Randomly select angle 0, 90, 180 or 270 for rotating the image.
     """
-
-    def __init__(self, degree=None, resample=False, expand=True, center=None, fill=0):
+    def __init__(
+        self, degree=None, resample=False, expand=True, center=None, fill=0
+    ):
         if degree is None:
             self.degrees = random.choice([0, 90, 180, 270])
         else:
-            assert degree in [0, 90, 180, 270], 'degree must be in [0, 90, 180, 270]'
+            assert degree in [
+                0, 90, 180, 270
+            ], 'degree must be in [0, 90, 180, 270]'
             self.degrees = degree
 
         self.resample = resample
@@ -74,19 +75,22 @@ class AutoRandomRotation(object):
         self.fill = fill
 
     def __call__(self, img):
-        return F.rotate(img, self.degrees, self.resample, self.expand, self.center, self.fill)
+        return F.rotate(
+            img, self.degrees, self.resample, self.expand, self.center,
+            self.fill
+        )
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + '(degrees={0}'.format(self.degrees)
+        format_string = self.__class__.__name__ + '(degrees={0}'.format(
+            self.degrees
+        )
         format_string += ', resample={0}'.format(self.resample)
         format_string += ', expand={0}'.format(self.expand)
         if self.center is not None:
             format_string += ', center={0}'.format(self.center)
         format_string += ')'
         return format_string
-    
 
-#--------------------------------------------------------------------------------
 
 class RandomGaussBlur(object):
     """
@@ -104,17 +108,19 @@ class RandomGaussBlur(object):
         return img.filter(ImageFilter.GaussianBlur(radius=self.radius))
 
     def __repr__(self):
-        return self.__class__.__name__ + '(Gaussian Blur radius={0})'.format(self.radius)
-    
+        return self.__class__.__name__ + '(Gaussian Blur radius={0})'.format(
+            self.radius
+        )
 
-#--------------------------------------------------------------------------------
 
 class RandomAffineCV2(object):
     """
     Randomly apply affine transformation by CV2 method on image by alpha parameter.
     """
     def __init__(self, alpha):
-        assert isinstance(alpha, numbers.Number), "alpha should be a single number."
+        assert isinstance(
+            alpha, numbers.Number
+        ), "alpha should be a single number."
         assert 0. <= alpha <= 0.15, \
             "In pathological image, alpha should be in (0,0.15), you can change in myTransform.py"
         self.alpha = alpha
@@ -129,11 +135,23 @@ class RandomAffineCV2(object):
         imgsize = img.shape[:2]
         center = np.float32(imgsize) // 2
         censize = min(imgsize) // 3
-        pts1 = np.float32([center+censize, [center[0]+censize, center[1]-censize], center-censize])  # raw point
-        pts2 = pts1 + np.random.uniform(-alpha, alpha, size=pts1.shape).astype(np.float32)  # output point
+        pts1 = np.float32(
+            [
+                center + censize, [center[0] + censize, center[1] - censize],
+                center - censize
+            ]
+        )  # raw point
+        pts2 = pts1 + np.random.uniform(-alpha, alpha, size=pts1.shape).astype(
+            np.float32
+        )  # output point
         M = cv2.getAffineTransform(pts1, pts2)  # affine matrix
-        img = cv2.warpAffine(img, M, imgsize[::-1],
-                               flags=cv2.INTER_NEAREST, borderMode=cv2.BORDER_REFLECT_101)
+        img = cv2.warpAffine(
+            img,
+            M,
+            imgsize[::-1],
+            flags=cv2.INTER_NEAREST,
+            borderMode=cv2.BORDER_REFLECT_101
+        )
         if mask is not None:
             return Image.fromarray(img[..., :3]), Image.fromarray(img[..., 3])
         else:
@@ -144,9 +162,7 @@ class RandomAffineCV2(object):
 
     def __repr__(self):
         return self.__class__.__name__ + '(alpha value={0})'.format(self.alpha)
-    
 
-#--------------------------------------------------------------------------------
 
 class RandomElastic(object):
     """
@@ -174,26 +190,34 @@ class RandomElastic(object):
         dy = gaussian_filter((np.random.rand(*shape) * 2 - 1), sigma) * alpha
         # dz = np.zeros_like(dx)
 
-        x, y, z = np.meshgrid(np.arange(shape[1]), np.arange(shape[0]), np.arange(shape[2]))
-        indices = np.reshape(y + dy, (-1, 1)), np.reshape(x + dx, (-1, 1)), np.reshape(z, (-1, 1))
+        x, y, z = np.meshgrid(
+            np.arange(shape[1]), np.arange(shape[0]), np.arange(shape[2])
+        )
+        indices = np.reshape(y + dy,
+                             (-1, 1)), np.reshape(x + dx,
+                                                  (-1,
+                                                   1)), np.reshape(z, (-1, 1))
 
-        img = map_coordinates(img, indices, order=0, mode='reflect').reshape(shape)
+        img = map_coordinates(img, indices, order=0,
+                              mode='reflect').reshape(shape)
         if mask is not None:
             return Image.fromarray(img[..., :3]), Image.fromarray(img[..., 3])
         else:
             return Image.fromarray(img)
 
     def __call__(self, img, mask=None):
-        return self.RandomElasticCV2(np.array(img), self.alpha, self.sigma, mask)
+        return self.RandomElasticCV2(
+            np.array(img), self.alpha, self.sigma, mask
+        )
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + '(alpha value={0})'.format(self.alpha)
+        format_string = self.__class__.__name__ + '(alpha value={0})'.format(
+            self.alpha
+        )
         format_string += ', sigma={0}'.format(self.sigma)
         format_string += ')'
         return format_string
-    
 
-#--------------------------------------------------------------------------------
 
 class RandomRotate90:
     def __init__(self, angles):
@@ -202,10 +226,8 @@ class RandomRotate90:
     def __call__(self, x):
         angle = random.choice(self.angles)
         return rotate(x, angle)
-    
-    
-#--------------------------------------------------------------------------------
-    
+
+
 class RandomCenterCrop:
     def __init__(self, lower, upper):
         self.lower = lower
@@ -216,25 +238,23 @@ class RandomCenterCrop:
         return transforms.functional.center_crop(x, size)
 
 
- #--------------------------------------------------------------------------------
-
-class Transform: 
+class Transform:
     def __init__(self, mean, std):
         self.mean = mean
-        self.std = std 
-        
+        self.std = std
+
         self.transform_weak = transforms.Compose(
             [
-                transforms.RandomHorizontalFlip(0.5), 
-                transforms.RandomVerticalFlip(0.5), 
+                transforms.RandomHorizontalFlip(0.5),
+                transforms.RandomVerticalFlip(0.5),
                 RandomRotate90([0, 90, 180, 270]),
-                transforms.ColorJitter(0.1, 0.1, 0.1, 0.1), 
+                transforms.ColorJitter(0.1, 0.1, 0.1, 0.1),
                 transforms.Resize((224, 224)),
-                transforms.ToTensor(), 
+                transforms.ToTensor(),
                 transforms.Normalize(self.mean, self.std)
             ]
         )
-        
+
         self.transform_strong = transforms.Compose(
             [
                 transforms.RandomHorizontalFlip(0.5),
@@ -243,8 +263,8 @@ class Transform:
                 HEDJitter(theta=0.01),
                 #RandomCenterCrop(384, 512),
                 transforms.Resize((224, 224)),
-                #RandomAffineCV2(alpha=0.05), 
-                transforms.ToTensor(), 
+                #RandomAffineCV2(alpha=0.05),
+                transforms.ToTensor(),
                 transforms.Normalize(self.mean, self.std),
             ]
         )
@@ -253,4 +273,3 @@ class Transform:
         y_1 = self.transform_weak(x)
         y_2 = self.transform_strong(x)
         return y_1, y_2
-    
