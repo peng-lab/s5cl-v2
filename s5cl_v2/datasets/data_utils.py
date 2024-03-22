@@ -3,7 +3,6 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset, Subset
 
-#----------------------------------------------------------------------------
 
 class DatasetFromSubset(Dataset):
     def __init__(self, subset, transform=None):
