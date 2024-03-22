@@ -1,21 +1,3 @@
-""" 
------> Swin Transformer
-Mostly copy-paste from timm library.
-https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/swin_transformer.py
-
------> CTransPath Weights
-!gdown https://drive.google.com/u/0/uc?id=1DoDx_70_TLj98gTf6YTXnu4tFhsFocDX&export=download
-
------> Feature Extractor
-model = swin_tiny_patch4_window7_224(embed_layer=ConvStem, pretrained=False)
-model.head = nn.Identity()
-
------> Pre-Trained Model
-td = torch.load('/content/ctranspath.pth')
-model.load_state_dict(td['model'], strict=True)
-"""
-
-
 import sys
 import math
 import logging
