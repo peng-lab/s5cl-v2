@@ -5,7 +5,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 
 
-class COAD(data_utils.Dataset):
+class TCGA_COAD(data_utils.Dataset):
     ''' Unlabeled Dataset Class'''
     def __init__(self, data_path, exclude=None, mode='20.0', limit=float("inf"), transform=None):
         super().__init__()
