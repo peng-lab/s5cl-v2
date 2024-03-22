@@ -45,12 +45,12 @@ def merge_and_order(x, y, fltr):
     if len(y.size()) == 1:
         y = y.unsqueeze(dim=0)
     i, j = 0, 0
-    z = torch.cat((x, y)) 
+    z = torch.cat((x, y))
     for k in range(len(z)):
-        if fltr[k] == True:        
+        if fltr[k] == True:
             z[k] = x[i]
             i += 1
         else:
             z[k] = y[j]
-            j += 1         
+            j += 1
     return z
